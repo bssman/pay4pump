@@ -49,30 +49,31 @@
     </div>
     <script>
         async function payForPump(pumpId) {
-            try {
-                // Send payment request to backend
-                const response = await fetch('/api/pay', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ pumpId })
-                });
+    try {
+        // Update the backend API URL
+        const response = await fetch('http://localhost:3000/api/pay', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ pumpId })
+        });
 
-                const result = await response.json();
+        const result = await response.json();
 
-                if (result.success) {
-                    // Update UI for successful payment
-                    document.getElementById(`pump${pumpId}`).classList.add('active');
-                    alert(`Pump ${pumpId} activated successfully!`);
-                } else {
-                    alert(`Payment failed: ${result.message}`);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred while processing the payment.');
-            }
+        if (result.success) {
+            // Update UI for successful payment
+            document.getElementById(`pump${pumpId}`).classList.add('active');
+            alert(`Pump ${pumpId} activated successfully!`);
+        } else {
+            alert(`Payment failed: ${result.message}`);
         }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while processing the payment.');
+    }
+}
+
     </script>
 </body>
 </html>

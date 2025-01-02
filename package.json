@@ -8,12 +8,18 @@
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["paystack", "pump activation", "payment gateway", "nodejs"],
+  "keywords": [
+    "paystack",
+    "pump activation",
+    "payment gateway",
+    "nodejs"
+  ],
   "author": "Your Name",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.7.9",
     "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2"
   },

@@ -1,12 +1,28 @@
-// Backend implementation using Node.js with Express
+// Import dependencies
 const express = require('express');
 const axios = require('axios');
+const cors = require('cors'); // Import cors module
 const bodyParser = require('body-parser');
-const app = express();
-const port = 3000;
 require('dotenv').config();
-// Middleware
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Enable CORS
+app.use(cors({
+    origin: 'http://127.0.0.1:5500', // Allow requests from your frontend origin
+    methods: ['GET', 'POST'],       // Specify allowed methods
+    allowedHeaders: ['Content-Type', 'Authorization'] // Specify allowed headers
+}));
+
+// Other middlewares
+app.use(express.json());
 app.use(bodyParser.json());
+
+// Start server
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+});
 
 // Store pump states
 const pumps = {
@@ -17,23 +33,30 @@ const pumps = {
 };
 
 // Paystack API details
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY; // Replace with your secret key
-const CALLBACK_URL = 'http://your-domain.com/api/verify';
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+const CALLBACK_URL = 'http://127.0.0.1:5500/success.html'; // Update with your frontend success page
+
+if (!PAYSTACK_SECRET_KEY) {
+    console.error('Error: PAYSTACK_SECRET_KEY is not set in the environment variables.');
+    process.exit(1);
+}
 
 // Endpoint to handle payment
 app.post('/api/pay', async (req, res) => {
-    const { pumpId } = req.body;
+    const { pumpId, email } = req.body;
 
     if (!pumpId || !pumps[pumpId]) {
         return res.status(400).json({ success: false, message: 'Invalid pump ID' });
     }
+
+    const userEmail = email || 'garpiyan@gmail.com'; // Default email if not provided
 
     try {
         // Initiate transaction
         const response = await axios.post(
             'https://api.paystack.co/transaction/initialize',
             {
-                email: 'customer@example.com', // Replace with dynamic user email
+                email: userEmail,
                 amount: 5000, // Replace with the amount for pump activation (in kobo)
                 callback_url: CALLBACK_URL,
                 metadata: { pumpId }
@@ -48,7 +71,9 @@ app.post('/api/pay', async (req, res) => {
 
         res.json({ success: true, authorization_url: response.data.data.authorization_url });
     } catch (error) {
-        console.error(error);
+        //Log paystack error
+        console.log('Paystack response:', error.response?.data);
+        console.error('Error initiating payment:', error.response?.data || error.message);
         res.status(500).json({ success: false, message: 'Payment initialization failed' });
     }
 });
@@ -56,6 +81,10 @@ app.post('/api/pay', async (req, res) => {
 // Endpoint to verify payment
 app.get('/api/verify', async (req, res) => {
     const { reference } = req.query;
+
+    if (!reference) {
+        return res.status(400).json({ success: false, message: 'Transaction reference is required' });
+    }
 
     try {
         // Verify transaction
@@ -72,12 +101,12 @@ app.get('/api/verify', async (req, res) => {
 
             // Activate pump
             activatePump(pumpId);
-            res.redirect('/'); // Redirect to your frontend success page
+            res.redirect('/success.html'); // Redirect to your frontend success page
         } else {
             res.status(400).json({ success: false, message: 'Invalid transaction data' });
         }
     } catch (error) {
-        console.error(error);
+        console.error('Error verifying payment:', error.response?.data || error.message);
         res.status(500).json({ success: false, message: 'Payment verification failed' });
     }
 });
@@ -95,8 +124,3 @@ function activatePump(pumpId) {
         console.log(`Pump ${pumpId} deactivated.`);
     }, 60 * 60 * 1000); // 1 hour
 }
-
-// Start server
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-});
