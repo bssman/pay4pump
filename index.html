@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pay for Pump Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            padding: 20px;
+        }
+        .pump-button {
+            display: inline-block;
+            width: 150px;
+            height: 50px;
+            margin: 20px;
+            line-height: 50px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            background-color: gray;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .pump-button.active {
+            background-color: green;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pay for Pump Service</h1>
+        <p>Select a pump and complete payment to activate it for one hour.</p>
+        <div id="pumps">
+            <button class="pump-button" id="pump1" onclick="payForPump(1)">Pump 1</button>
+            <button class="pump-button" id="pump2" onclick="payForPump(2)">Pump 2</button>
+            <button class="pump-button" id="pump3" onclick="payForPump(3)">Pump 3</button>
+            <button class="pump-button" id="pump4" onclick="payForPump(4)">Pump 4</button>
+        </div>
+    </div>
+    <script>
+        async function payForPump(pumpId) {
+            try {
+                // Send payment request to backend
+                const response = await fetch('/api/pay', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ pumpId })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Update UI for successful payment
+                    document.getElementById(`pump${pumpId}`).classList.add('active');
+                    alert(`Pump ${pumpId} activated successfully!`);
+                } else {
+                    alert(`Payment failed: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing the payment.');
+            }
+        }
+    </script>
+</body>
+</html>
