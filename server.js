@@ -1,37 +1,29 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors'); // Import CORS
-const axios = require('axios');
-require('dotenv').config();
+const express = require("express");
+const axios = require("axios");
+const bodyParser = require("body-parser");
+require("dotenv").config();
 
 const app = express();
-
-// Configure CORS
-const corsOptions = {
-  origin: 'https://suites11.com.ng', // Allow requests only from this frontend
-  methods: ['GET', 'POST'],
-};
-app.use(cors(corsOptions)); // Apply CORS middleware
-
 app.use(bodyParser.json());
 
-const PORT = process.env.PORT || 3000;
+// Home route
+app.get("/", (req, res) => {
+  res.send("Pay4Pump Backend is Running!");
+});
 
-// Endpoint to initialize payment
-app.post('/api/pay', async (req, res) => {
+// Initialize payment
+app.post("/api/pay", async (req, res) => {
   const { pumpId } = req.body;
-
-  if (!pumpId) {
-    return res.status(400).json({ error: 'Pump ID is required' });
-  }
+  const email = "test@example.com";
+  const amount = 5000;
 
   try {
     const response = await axios.post(
-      'https://api.paystack.co/transaction/initialize',
+      "https://api.paystack.co/transaction/initialize",
       {
-        email: 'garpiyan@gmail.com',
-        amount: 5000, // Amount in kobo (50 NGN)
-        callback_url: `${process.env.CALLBACK_URL}/api/verify`,
+        email,
+        amount,
+        callback_url: `${process.env.CALLBACK_URL}`,
         metadata: { pumpId },
       },
       {
@@ -41,22 +33,16 @@ app.post('/api/pay', async (req, res) => {
       }
     );
 
-    res.json({
-      authorization_url: response.data.data.authorization_url,
-      reference: response.data.data.reference,
-    });
+    res.status(200).json({ authorization_url: response.data.data.authorization_url });
   } catch (error) {
-    res.status(500).json({ error: 'Payment initialization failed' });
+    console.error("Error initializing payment:", error.message);
+    res.status(500).json({ error: "Payment initialization failed" });
   }
 });
 
-// Endpoint to verify payment
-app.get('/api/verify', async (req, res) => {
+// Verify payment
+app.get("/api/verify", async (req, res) => {
   const { reference } = req.query;
-
-  if (!reference) {
-    return res.status(400).json({ error: 'Reference is required' });
-  }
 
   try {
     const response = await axios.get(
@@ -68,19 +54,21 @@ app.get('/api/verify', async (req, res) => {
       }
     );
 
-    const { status, metadata } = response.data.data;
-    if (status === 'success') {
-      console.log(`Pump ${metadata.pumpId} activated for 1 hour`);
-      res.send('Payment verified and pump activated');
+    if (response.data.data.status === "success") {
+      const pumpId = response.data.data.metadata.pumpId;
+      console.log(`Pump ${pumpId} activated for 1 hour`);
+      res.status(200).json({ message: `Pump ${pumpId} activated` });
     } else {
-      res.status(400).send('Payment not successful');
+      res.status(400).json({ error: "Payment not successful" });
     }
   } catch (error) {
-    res.status(500).send('Verification failed');
+    console.error("Error verifying payment:", error.message);
+    res.status(500).json({ error: "Payment verification failed" });
   }
 });
 
-// Start server
+// Start the server with dynamic port
+const PORT = process.env.PORT || 3000; // Default to 3000 for local testing
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
