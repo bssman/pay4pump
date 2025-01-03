@@ -3,53 +3,68 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pump Control</title>
+  <title>Pay for Pump</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
     button {
-      width: 100px;
-      height: 50px;
       margin: 10px;
+      padding: 10px 20px;
       font-size: 16px;
+      cursor: pointer;
     }
     .active {
       background-color: green;
       color: white;
     }
-    .inactive {
-      background-color: gray;
-      color: white;
+    .message {
+      margin: 20px;
+      font-size: 18px;
+      color: green;
+    }
+    .error {
+      margin: 20px;
+      font-size: 18px;
+      color: red;
     }
   </style>
 </head>
 <body>
-  <h1>Activate Pumps</h1>
+  <h1>Pay for Pump</h1>
+  <div id="message"></div>
   <div>
-    <button id="pump1" class="inactive" onclick="payForPump(1)">Pump 1</button>
-    <button id="pump2" class="inactive" onclick="payForPump(2)">Pump 2</button>
-    <button id="pump3" class="inactive" onclick="payForPump(3)">Pump 3</button>
-    <button id="pump4" class="inactive" onclick="payForPump(4)">Pump 4</button>
+    <button id="pump1">Pump 1</button>
+    <button id="pump2">Pump 2</button>
+    <button id="pump3">Pump 3</button>
+    <button id="pump4">Pump 4</button>
   </div>
+
   <script>
-    const backendUrl = "https://pay4pump.onrender.com/api/pay";
+    // Get query parameters from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const pump = urlParams.get("pump");
+    const message = urlParams.get("message");
+    const error = urlParams.get("error");
 
-    async function payForPump(pumpId) {
-      try {
-        const response = await fetch(`${backendUrl}/api/pay`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ pumpId }),
-        });
+    // Display message or error
+    const messageDiv = document.getElementById("message");
+    if (message) {
+      messageDiv.textContent = message;
+      messageDiv.className = "message";
+    } else if (error) {
+      messageDiv.textContent = error;
+      messageDiv.className = "error";
+    }
 
-        const data = await response.json();
-        if (data.authorization_url) {
-          window.location.href = data.authorization_url;
-        } else {
-          alert("Payment initiation failed!");
-        }
-      } catch (error) {
-        console.error("Error:", error);
+    // Highlight activated pump
+    if (pump) {
+      const pumpButton = document.getElementById(`pump${pump}`);
+      if (pumpButton) {
+        pumpButton.classList.add("active");
+        pumpButton.textContent = `Pump ${pump} Active`;
       }
     }
   </script>

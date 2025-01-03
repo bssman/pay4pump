@@ -1,4 +1,4 @@
-// First successfull test without redirect
+// redirect after paymen
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
@@ -63,16 +63,22 @@ app.get("/api/verify", async (req, res) => {
 
     if (response.data.data.status === "success") {
       const pumpId = response.data.data.metadata.pumpId;
+
       console.log(`Pump ${pumpId} activated for 1 hour`);
-      res.status(200).json({ message: `Pump ${pumpId} activated` });
+
+      // Redirect to the frontend with pumpId and success message
+      res.redirect(
+        `https://suites11.com.ng/pumps.htm?pump=${pumpId}&message=Pump ${pumpId} activated`
+      );
     } else {
-      res.status(400).json({ error: "Payment not successful" });
+      res.redirect(`https://suites11.com.ng/pumps.htm?error=Payment failed`);
     }
   } catch (error) {
     console.error("Error verifying payment:", error.message);
-    res.status(500).json({ error: "Payment verification failed" });
+    res.redirect(`https://suites11.com.ng/pumps.htm?error=Verification failed`);
   }
 });
+
 
 // Start Server
 const PORT = process.env.PORT || 3000;
