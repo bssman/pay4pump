@@ -1,29 +1,25 @@
 const express = require("express");
+const cors = require("cors");
 const axios = require("axios");
 const bodyParser = require("body-parser");
 require("dotenv").config();
 
-const cors = require("cors");
-
-// Configure CORS
-app.use(
-  cors({
-    origin: "https://suites11.com.ng/pumps.html", // Replace with your frontend URL
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
-  })
-);
-
-
+// Initialize Express App
 const app = express();
+
+// Middleware
+app.use(cors({
+  origin: "https://suites11.com.ng", // Replace with your frontend URL
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"],
+}));
 app.use(bodyParser.json());
 
-// Home route
+// Routes
 app.get("/", (req, res) => {
   res.send("Pay4Pump Backend is Running!");
 });
 
-// Initialize payment
 app.post("/api/pay", async (req, res) => {
   const { pumpId } = req.body;
   const email = "garpiyan@gmail.com";
@@ -35,7 +31,7 @@ app.post("/api/pay", async (req, res) => {
       {
         email,
         amount,
-        callback_url: `${process.env.CALLBACK_URL}`,
+        callback_url: process.env.CALLBACK_URL,
         metadata: { pumpId },
       },
       {
@@ -44,7 +40,6 @@ app.post("/api/pay", async (req, res) => {
         },
       }
     );
-
     res.status(200).json({ authorization_url: response.data.data.authorization_url });
   } catch (error) {
     console.error("Error initializing payment:", error.message);
@@ -52,7 +47,6 @@ app.post("/api/pay", async (req, res) => {
   }
 });
 
-// Verify payment
 app.get("/api/verify", async (req, res) => {
   const { reference } = req.query;
 
@@ -79,8 +73,8 @@ app.get("/api/verify", async (req, res) => {
   }
 });
 
-// Start the server with dynamic port
-const PORT = process.env.PORT || 3000; // Default to 3000 for local testing
+// Start Server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
