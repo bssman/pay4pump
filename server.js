@@ -12,7 +12,7 @@ app.get("/", (req, res) => {
 });
 
 // Initialize payment
-app.post("", async (req, res) => {
+app.post("/api/pay", async (req, res) => {
   const { pumpId } = req.body;
   const email = "garpiyan@gmail.com";
   const amount = 20000;
