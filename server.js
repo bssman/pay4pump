@@ -3,6 +3,18 @@ const axios = require("axios");
 const bodyParser = require("body-parser");
 require("dotenv").config();
 
+const cors = require("cors");
+
+// Configure CORS
+app.use(
+  cors({
+    origin: "https://suites11.com.ng/pumps.html", // Replace with your frontend URL
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
+
+
 const app = express();
 app.use(bodyParser.json());
 
