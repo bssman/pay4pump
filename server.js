@@ -68,14 +68,14 @@ app.get("/api/verify", async (req, res) => {
 
       // Redirect to the frontend with pumpId and success message
       res.redirect(
-        `https://suites11.com.ng/pumps.htm?pump=${pumpId}&message=Pump ${pumpId} activated`
+        `https://suites11.com.ng/pumps.html?pump=${pumpId}&message=Pump ${pumpId} activated`
       );
     } else {
-      res.redirect(`https://suites11.com.ng/pumps.htm?error=Payment failed`);
+      res.redirect(`https://suites11.com.ng/pumps.html?error=Payment failed`);
     }
   } catch (error) {
     console.error("Error verifying payment:", error.message);
-    res.redirect(`https://suites11.com.ng/pumps.htm?error=Verification failed`);
+    res.redirect(`https://suites11.com.ng/pumps.html?error=Verification failed`);
   }
 });
 
