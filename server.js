@@ -23,8 +23,8 @@ app.get("/", (req, res) => {
 
 app.post("/api/pay", async (req, res) => {
   const { pumpId } = req.body;
-  const email = "test@example.com";
-  const amount = 5000;
+  const email = "garpiyan@gmail.com";
+  const amount = 20000;
 
   try {
     const response = await axios.post(
