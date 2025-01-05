@@ -1,22 +1,53 @@
-//hope it worked?
+// Backend: server.js 5 january recovery
 const express = require("express");
 const cors = require("cors");
-const app = express();
-const PORT = process.env.PORT || 5000;
+const axios = require("axios");
+const bodyParser = require("body-parser");
+require("dotenv").config();
 
-// Sample pump state (you should replace this with a real database or memory storage)
-let pumpStates = {
-  pump1: false,
-  pump2: false,
-  pump3: false,
-  pump4: false,
-};
+// Initialize Express App
+const app = express();
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: "https://suites11.com.ng", // Replace with your frontend URL
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"],
+}));
+app.use(bodyParser.json());
 
-// Payment verification endpoint (updated to activate pumps)
+// Routes
+app.get("/", (req, res) => {
+  res.send("Pay4Pump Backend is Running!");
+});
+
+app.post("/api/pay", async (req, res) => {
+  const { pumpId } = req.body;
+  const email = "test@example.com";
+  const amount = 5000;
+
+  try {
+    const response = await axios.post(
+      "https://api.paystack.co/transaction/initialize",
+      {
+        email,
+        amount,
+        callback_url: process.env.CALLBACK_URL,
+        metadata: { pumpId },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        },
+      }
+    );
+    res.status(200).json({ authorization_url: response.data.data.authorization_url });
+  } catch (error) {
+    console.error("Error initializing payment:", error.message);
+    res.status(500).json({ error: "Payment initialization failed" });
+  }
+});
+
 app.get("/api/verify", async (req, res) => {
   const { reference } = req.query;
 
@@ -33,29 +64,23 @@ app.get("/api/verify", async (req, res) => {
     if (response.data.data.status === "success") {
       const pumpId = response.data.data.metadata.pumpId;
 
-      // Activate pump for 1 hour
-      pumpStates[`pump${pumpId}`] = true;
-      setTimeout(() => {
-        pumpStates[`pump${pumpId}`] = false;
-      }, 3600000); // 1 hour in milliseconds
-
       console.log(`Pump ${pumpId} activated for 1 hour`);
-      res.json({ message: `Pump ${pumpId} activated` });
+
+      // Redirect to the correct frontend URL
+      res.redirect(
+        `https://suites11.com.ng/pumps.html?pump=${pumpId}&message=Pump ${pumpId} activated`
+      );
     } else {
-      res.status(400).json({ error: "Payment failed" });
+      res.redirect(`https://suites11.com.ng/pumps.html?error=Payment failed`);
     }
   } catch (error) {
     console.error("Error verifying payment:", error.message);
-    res.status(500).json({ error: "Verification failed" });
+    res.redirect(`https://suites11.com.ng/pumps.html?error=Verification failed`);
   }
 });
 
-// Pump status endpoint
-app.get("/api/pump-status", (req, res) => {
-  res.json(pumpStates);
-});
-
-// Start server
+// Start Server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

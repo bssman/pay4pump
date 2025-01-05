@@ -3,60 +3,92 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pump Control</title>
-  <style>
-    .pump-button {
-      width: 100px;
-      height: 50px;
-      font-size: 16px;
-      margin: 10px;
-      color: white;
+  <title>Pay for Pump</title>
+    <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
     }
-    .inactive {
-      background-color: gray;
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
     }
     .active {
       background-color: green;
+      color: white;
+    }
+    .message {
+      margin: 20px;
+      font-size: 18px;
+      color: green;
+    }
+    .error {
+      margin: 20px;
+      font-size: 18px;
+      color: red;
     }
   </style>
 </head>
 <body>
-  <h1>Pump Control</h1>
+  <h1>Pay for Pump</h1>
+  <div id="message"></div>
   <div>
-    <button id="pump1" class="pump-button inactive">Pump 1</button>
-    <button id="pump2" class="pump-button inactive">Pump 2</button>
-    <button id="pump3" class="pump-button inactive">Pump 3</button>
-    <button id="pump4" class="pump-button inactive">Pump 4</button>
+    <button id="pump1" onclick="payForPump(1)">Pump 1</button>
+    <button id="pump2" onclick="payForPump(2)">Pump 2</button>
+    <button id="pump3" onclick="payForPump(3)">Pump 3</button>
+    <button id="pump4" onclick="payForPump(4)">Pump 4</button>
   </div>
 
   <script>
-    const pumps = ["pump1", "pump2", "pump3", "pump4"];
+    // Get query parameters from the URL 5 january recovery 
+    const urlParams = new URLSearchParams(window.location.search);
+    const pump = urlParams.get("pump");
+    const message = urlParams.get("message");
+    const error = urlParams.get("error");
 
-    async function fetchPumpStatus() {
-      try {
-        const response = await fetch("https://pay4pump.onrender.com/api/pump-status");
-        const status = await response.json();
+    // Display message or error
+    const messageDiv = document.getElementById("message");
+    if (message) {
+      messageDiv.textContent = message;
+      messageDiv.className = "message";
+    } else if (error) {
+      messageDiv.textContent = error;
+      messageDiv.className = "error";
+    }
 
-        pumps.forEach(pump => {
-          const button = document.getElementById(pump);
-          if (status[pump]) {
-            button.classList.remove("inactive");
-            button.classList.add("active");
-          } else {
-            button.classList.remove("active");
-            button.classList.add("inactive");
-          }
-        });
-      } catch (error) {
-        console.error("Error fetching pump status:", error);
+    // Highlight activated pump
+    if (pump) {
+      const pumpButton = document.getElementById(`pump${pump}`);
+      if (pumpButton) {
+        pumpButton.classList.add("active");
+        pumpButton.textContent = `Pump ${pump} Active`;
       }
     }
 
-    // Poll the backend every 10 seconds
-    setInterval(fetchPumpStatus, 10000);
-
-    // Fetch the initial status on page load
-    fetchPumpStatus();
+    // Payment initialization function
+    async function payForPump(pumpId) {
+      try {
+        const response = await fetch("https://pay4pump.onrender.com/api/pay", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ pumpId }),
+        });
+        const data = await response.json();
+        if (data.authorization_url) {
+          window.location.href = data.authorization_url;
+        } else {
+          alert("Payment initialization failed. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error initializing payment:", error);
+        alert("An error occurred. Please try again.");
+      }
+    }
   </script>
 </body>
 </html>
