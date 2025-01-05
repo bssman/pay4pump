@@ -21,6 +21,38 @@ app.get("/", (req, res) => {
   res.send("Pay4Pump Backend is Running!");
 });
 
+// Store pump statuses (default: all off)
+let pumpStatus = {
+  pump1: false,
+  pump2: false,
+  pump3: false,
+  pump4: false,
+};
+
+// Simulate pump activation for 1 hour after payment
+app.post("/api/activate-pump", (req, res) => {
+  const { pumpId } = req.body;
+
+  if (pumpId >= 1 && pumpId <= 4) {
+    // Turn on the pump
+    pumpStatus[`pump${pumpId}`] = true;
+
+    // Turn off the pump automatically after 1 hour
+    setTimeout(() => {
+      pumpStatus[`pump${pumpId}`] = false;
+    }, 3600000); // 1 hour in milliseconds
+
+    res.status(200).json({ message: `Pump ${pumpId} activated for 1 hour` });
+  } else {
+    res.status(400).json({ error: "Invalid pump ID" });
+  }
+});
+
+// Provide current pump statuses
+app.get("/api/pump-status", (req, res) => {
+  res.status(200).json(pumpStatus);
+});
+
 app.post("/api/pay", async (req, res) => {
   const { pumpId } = req.body;
   const email = "garpiyan@gmail.com";
