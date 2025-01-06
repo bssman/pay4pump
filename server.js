@@ -53,6 +53,7 @@ app.post("/api/activate-pump", (req, res) => {
 // Provide current pump statuses
 app.get("/api/pump-status", (req, res) => {
   console.log("Received request:", req.headers, req.query);
+  console.log("Request received with query:", req.query);
   res.status(200).json(pumpStatus);
 });
 
