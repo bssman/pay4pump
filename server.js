@@ -10,10 +10,12 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: "https://suites11.com.ng", // Replace with your frontend URL
+  origin: "*", // Allow all origins for now
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"],
 }));
+
+
 app.use(bodyParser.json());
 
 // Routes

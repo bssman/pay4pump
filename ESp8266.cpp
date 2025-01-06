@@ -1,13 +1,13 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <ArduinoJson.h>
 
 // WiFi Credentials
-const char* ssid = "TECNO CAMON 12 Air";
-const char* password = "afms83/406";
+const char* ssid = "TECNO CAMON 12 Air"; // Replace with your WiFi SSID
+const char* password = "afms83/406";     // Replace with your WiFi password
 
 // Backend URL
-const char* backend_url = "https://pay4pump.onrender.com/api/pump-status"; // Correct endpoint
-
+const char* backend_url = "https://pay4pump.onrender.com/api/pump-status"; // Replace with your endpoint
 
 // Relay pins
 const int pump1Pin = D1;
@@ -35,7 +35,7 @@ void setup() {
 }
 
 void loop() {
-  // Check pump status periodically
+  // Fetch pump status periodically
   fetchPumpStatus();
 
   // Wait before next check
@@ -58,26 +58,33 @@ void connectToWiFi() {
 
 void fetchPumpStatus() {
   if (WiFi.status() == WL_CONNECTED) {
+    WiFiClient client;
     HTTPClient http;
-    http.begin(backend_url);
-    int httpCode = http.GET();
 
-    if (httpCode > 0) {
-      Serial.printf("HTTP GET Response Code: %d\n", httpCode);
+    if (http.begin(client, backend_url)) { // Updated API for HTTPClient
+      int httpCode = http.GET();
 
-      if (httpCode == HTTP_CODE_OK) {
-        String payload = http.getString();
-        Serial.println("Payload:");
-        Serial.println(payload);
+      if (httpCode > 0) {
+        Serial.printf("HTTP GET Response Code: %d\n", httpCode);
 
-        // Parse the JSON response
-        parsePumpStatus(payload);
+        if (httpCode == HTTP_CODE_OK) {
+          String payload = http.getString();
+          Serial.println("Payload:");
+          Serial.println(payload);
+
+          // Parse the JSON response
+          parsePumpStatus(payload);
+        } else {
+          Serial.printf("Unexpected HTTP Code: %d\n", httpCode);
+        }
+      } else {
+        Serial.printf("HTTP GET Failed: %s\n", http.errorToString(httpCode).c_str());
       }
-    } else {
-      Serial.printf("HTTP GET Failed: %s\n", http.errorToString(httpCode).c_str());
-    }
 
-    http.end();
+      http.end();
+    } else {
+      Serial.println("HTTPClient initialization failed.");
+    }
   } else {
     Serial.println("WiFi disconnected. Reconnecting...");
     connectToWiFi();
@@ -85,16 +92,33 @@ void fetchPumpStatus() {
 }
 
 void parsePumpStatus(String jsonPayload) {
-  // Assuming the backend sends JSON like:
-  // { "pump1": true, "pump2": false, "pump3": true, "pump4": false }
+  // Create a JSON document with enough capacity
+  StaticJsonDocument<256> doc;
 
-  if (jsonPayload.indexOf("\"pump1\":true") > -1) {
-    digitalWrite(pump1Pin, HIGH); // Turn on Pump 1
-  } else {
-    digitalWrite(pump1Pin, LOW); // Turn off Pump 1
+  // Deserialize the JSON payload
+  DeserializationError error = deserializeJson(doc, jsonPayload);
+
+  if (error) {
+    Serial.print("JSON Deserialization failed: ");
+    Serial.println(error.c_str());
+    return;
   }
 
-  if (jsonPayload.indexOf("\"pump2\":true") > -1) {
-    digitalWrite(pump2Pin, HIGH); // Turn on Pump 2
-  } else {
-    
+  // Control the pumps based on JSON values
+  bool pump1 = doc["pump1"] | false; // Default to false if not found
+  bool pump2 = doc["pump2"] | false;
+  bool pump3 = doc["pump3"] | false;
+  bool pump4 = doc["pump4"] | false;
+
+  digitalWrite(pump1Pin, pump1 ? HIGH : LOW);
+  digitalWrite(pump2Pin, pump2 ? HIGH : LOW);
+  digitalWrite(pump3Pin, pump3 ? HIGH : LOW);
+  digitalWrite(pump4Pin, pump4 ? HIGH : LOW);
+
+  // Debugging output
+  Serial.printf("Pump1: %s, Pump2: %s, Pump3: %s, Pump4: %s\n",
+                pump1 ? "ON" : "OFF",
+                pump2 ? "ON" : "OFF",
+                pump3 ? "ON" : "OFF",
+                pump4 ? "ON" : "OFF");
+}
